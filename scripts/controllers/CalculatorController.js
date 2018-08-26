@@ -47,6 +47,51 @@ class CalculatorController {
         })
     }
 
+    displayExpression(buttonValue){
+
+        switch (buttonValue) {
+            case "ac":
+                break;
+            case "ce":
+
+                break;
+            case "porcento":
+                break;
+            case "divisao":
+                break;
+            case "multiplicacao":
+                break;
+            case "subtracao":
+                break;
+            case "soma":
+                break;
+            case "igual":
+                break;
+            case "ponto":
+                break;
+            case "0":        
+            case "1":
+            case "2":
+            case "3":
+            case "4":
+            case "5":
+            case "6":
+            case "7":
+            case "8":
+            case "9":
+            case "10":
+                break;
+            default:
+                this.setDisplayValueResult = "Error";
+                break;
+        }
+    }
+
+    clearDisplayExpression(){
+        this.setDisplayValueResult = "0";
+        this.setExpressionCalculate = [];
+    };
+
     get getExpressionCalculate(){
         return this._ExpressionCalculate;
     }
