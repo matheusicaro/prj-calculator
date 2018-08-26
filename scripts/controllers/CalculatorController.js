@@ -6,7 +6,9 @@ class CalculatorController {
         this._displayValueResult = document.querySelector('#display');
         this._displayHour = document.querySelector('#hora');
         this._displayDate = document.querySelector('#data');
+        this._ExpressionCalculate = [];
         this.initialize();
+        this.initButtonsEvents();
     }
     
     initialize(){
@@ -20,8 +22,37 @@ class CalculatorController {
   
     }
 
-    curretDateAndTime(){
+    // LISTEN AND TREAD MOUSE EVENTS (CLICK ON THE BUTTONS)
+    initButtonsEvents (){
+        // Take everything you found about to tag 'g' inside the id-'buttons' and id-'parts
+        let buttonsList = document.querySelectorAll("#buttons > g, #parts > g");        
+        
+        // button = value of Tag 'g' html
+        buttonsList.forEach((button, index) => {
+            this.addEventListenerAll(button, "click drag", functionClick =>{
+                let numberClickButton = button.className.baseVal.replace("btn-", "")
+                this.displayExpression(numberClickButton);
+            });
 
+            this.addEventListenerAll(button, "mouseover mouseup mousedown", e =>{
+                button.style.cursor = "pointer";
+            });
+        });
+    }
+
+    // FUNCTION TO CAPTURE VARIOUS EVENTS ON THE ITEM
+    addEventListenerAll(element, events, functionClick){
+        events.split(" ").forEach(event => {
+            element.addEventListener(event, functionClick, false)
+        })
+    }
+
+    get getExpressionCalculate(){
+        return this._ExpressionCalculate;
+    }
+
+    set setExpressionCalculate(value){
+        this._ExpressionCalculate.push(value);
     }
 
     get getDisplayValueResult(){
