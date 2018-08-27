@@ -3,7 +3,7 @@ class CalculatorController {
     
     constructor(){
         this._local = ("pt-bt");
-        this._displayValueResult = document.querySelector('#display');
+        this._DisplayResult = document.querySelector('#display');
         this._displayHour = document.querySelector('#hora');
         this._displayDate = document.querySelector('#data');
         this._ExpressionCalculate = [];             //expressao (vetor)
@@ -91,18 +91,27 @@ class CalculatorController {
                 this.addOperation(parseInt(buttonValue));
                 break;
             default:
-                this.setDisplayValueResult = "Error";
+                this.setDisplayResult = "Error";
                 break;
         }
     }
 
     clearDisplayExpression(){
-        this.setDisplayValueResult = "0";
+        this.setDisplayResult = "0";
         this.setExpressionCalculate = [];
     };
 
     printDisplay(){
-        console.log("imprimindo..:", this.getExpressionCalculate);
+        let numberOfTermsInExpression = this.getExpressionCalculate.length;
+        
+        if(numberOfTermsInExpression === 2)
+            this.setDisplayResult = this.getExpressionCalculate.join("");
+        
+        else if(numberOfTermsInExpression === 3)
+            this.setDisplayResult = this.lastExpressionValue();
+        
+        else 
+            this.setDisplayResult = this.getExpressionCalculate.toString();
     }
 
     addOperation(currentValue){
@@ -111,7 +120,7 @@ class CalculatorController {
         if(isNaN(this.lastExpressionValue())){     
 
             if(this.isOperator(currentValue) && this.isOperator(this.lastExpressionValue())){
-                this._ExpressionCalculate[this.replaceLastExpression()] = value;
+                this._ExpressionCalculate[this.replaceLastExpression()] = currentValue;
             
             }else if( this.isDot(currentValue) || this.isDot(this.lastExpressionValue()) ){
     
@@ -119,8 +128,8 @@ class CalculatorController {
                     this.pushExpressionCalculate(currentValue)
                 }else{
                     let newValue = this.lastExpressionValue().toString() + currentValue.toString();
-                    let replaceLastExpression = true;
-                    this.pushExpressionCalculate(parseFloat(newValue), replaceLastExpression);
+                    let replaceTheLastExpression = true;
+                    this.pushExpressionCalculate(parseFloat(newValue), replaceTheLastExpression);
                 }
             }else
                 this.pushExpressionCalculate(currentValue)
@@ -134,8 +143,8 @@ class CalculatorController {
                 
             }else{
                 let newValue = this.lastExpressionValue().toString() + currentValue.toString();
-                let replaceLastExpression = true;
-                this.pushExpressionCalculate(parseFloat(newValue), replaceLastExpression);
+                let replaceTheLastExpression = true;
+                this.pushExpressionCalculate(parseFloat(newValue), replaceTheLastExpression);
             }
         }
 
@@ -143,7 +152,8 @@ class CalculatorController {
     }
 
     pushExpressionCalculate(value, conditionReplace){
-
+        
+        let expressionComplet = 4;
         if(this.expressionCalculateIsEmpty()){
             this.setExpressionCalculate = value;
             return
@@ -151,12 +161,24 @@ class CalculatorController {
         if(conditionReplace){
             this._ExpressionCalculate[this.lastIndexOfExpression()] = value;
             return
-        }else if( this._ExpressionCalculate.length < 3){
-            this.setExpressionCalculate = value;
+        
+        }else if( this._ExpressionCalculate.length < expressionComplet){
+                this.setExpressionCalculate = value;
+            if( this._ExpressionCalculate.length === expressionComplet){
+                this.calculate();
+                return
+            }
             return
         }
-        console.log("pronto para somar")
+    }
 
+    calculate(){
+        
+        let lastElementForCalculate = this.getExpressionCalculate.pop();
+        
+        let resultFirstExpression = eval(this.getExpressionCalculate.join(""));
+
+        this._ExpressionCalculate = [resultFirstExpression, lastElementForCalculate];
     }
 
     expressionCalculateIsEmpty(){
@@ -199,15 +221,17 @@ class CalculatorController {
     }
 
     set setExpressionCalculate(value){
+        console.log(value)
         this._ExpressionCalculate.push(value);
     }
 
-    get getDisplayValueResult(){
-        return this._displayValueResult;
+    get getDisplayResult(){
+        return this._DisplayResult;
     }
 
-    set setDisplayValueResult(value){
-        this._displayValueResult.innerHTML = value;
+    set setDisplayResult(value){
+        console.log(value.toString().length);
+        this._DisplayResult.innerHTML = value;
     }
 
     get getDisplayHour(){
