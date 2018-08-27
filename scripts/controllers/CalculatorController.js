@@ -3,6 +3,8 @@ class CalculatorController {
     
     constructor(){
         this._local = ("pt-bt");
+        this._lastOperator = "";
+        this._lastNumber = "";
         this._DisplayResult = document.querySelector('#display');
         this._displayHour = document.querySelector('#hora');
         this._displayDate = document.querySelector('#data');
@@ -54,7 +56,7 @@ class CalculatorController {
                 this.clearDisplayExpression();
                 break;
             case "ce":
-
+                this.ce();
                 break;
             case "porcento":
                 this.addOperation("%");
@@ -98,8 +100,15 @@ class CalculatorController {
 
     clearDisplayExpression(){
         this.setDisplayResult = "0";
-        this.setExpressionCalculate = [];
+        this._ExpressionCalculate = [];
+        this.setLastNumber = "";
+        this.setLastNumber = "";
     };
+
+    ce() {
+       this.getExpressionCalculate.pop();
+       this.printDisplay();
+    }
 
     printDisplay(){
         let numberOfTermsInExpression = this.getExpressionCalculate.length;
@@ -174,11 +183,53 @@ class CalculatorController {
 
     calculate(){
         
-        let lastElementForCalculate = this.getExpressionCalculate.pop();
+        let lastOperator = this.getExpressionCalculate.pop();
         
-        let resultFirstExpression = eval(this.getExpressionCalculate.join(""));
+        if( lastOperator == '='){
+            if(this._lastOperator == "")
+                this.printDisplay();
+            //TODO Tratar o caso especifico de que, se tem uma operação realizada e receber multiplos '=', tem que OPERAR(+, -, *) o valor atual com o ultimo numero.            
+            else{
+                let lastOperatorOfExpression = this.getLastOperatorExpression();
+                let lastNumberOfExpression = this.getLastNumberExpression();
+                let resultFirstExpression = this.calculateFirstOperation();
+            }
+        }else if( lastOperator == '%'){
+            let resultFirstExpression = this.calculateFirstOperation();
+            resultFirstExpression /= 100;
+            this._ExpressionCalculate = [resultFirstExpression]
 
-        this._ExpressionCalculate = [resultFirstExpression, lastElementForCalculate];
+        }else{
+            let resultFirstExpression = this.calculateFirstOperation();
+            this._ExpressionCalculate = [resultFirstExpression, lastOperator];
+        }
+    }
+
+    getLastOperatorExpression(){
+        let index = this.lastIndexOfExpression();
+        
+        for(index; index >= 0; index --){
+            
+            if(this.isOperator(this.getExpressionCalculate[index]))
+                this.setLastOperator = this.getExpressionCalculate[index];        
+        }
+
+    }
+
+    getLastNumberExpression(){
+        let index = this.lastIndexOfExpression();
+        
+        for(index; index >= 0; index --){
+            
+            if(!this.isOperator(this.getExpressionCalculate[index]))
+                this.setLastNumber = this.getExpressionCalculate[index];        
+        }
+
+    }
+
+    calculateFirstOperation(){
+        let resultFirstOperation = eval(this.getExpressionCalculate.join(""));
+        return resultFirstOperation;
     }
 
     expressionCalculateIsEmpty(){
@@ -193,9 +244,8 @@ class CalculatorController {
     }
 
     lastExpressionValue(){
-        if(this.expressionCalculateIsEmpty()){
+        if(this.expressionCalculateIsEmpty())
             return this.getExpressionCalculate;
-        }
         return this._ExpressionCalculate[this.lastIndexOfExpression()];
     }
 
@@ -221,7 +271,6 @@ class CalculatorController {
     }
 
     set setExpressionCalculate(value){
-        console.log(value)
         this._ExpressionCalculate.push(value);
     }
 
@@ -230,7 +279,6 @@ class CalculatorController {
     }
 
     set setDisplayResult(value){
-        console.log(value.toString().length);
         this._DisplayResult.innerHTML = value;
     }
 
@@ -240,6 +288,14 @@ class CalculatorController {
 
     set setDisplayHour(value){
         this._displayHour.innerHTML = value;
+    }
+
+    set setLastOperator(value){
+        this._lastOperator = value;
+    }
+
+    set setLastNumber(value){
+        this._lastNumber = value;
     }
 
     get getDisplayDate(){
