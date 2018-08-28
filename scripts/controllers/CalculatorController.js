@@ -9,7 +9,7 @@ class CalculatorController {
         this._DisplayResult = document.querySelector('#display');
         this._displayHour = document.querySelector('#hora');
         this._displayDate = document.querySelector('#data');
-        this._allElementsInOperator = [];                            // expressao (vetor)
+        this._ElementsForCalculate = [];                            // expressao (vetor)
         
         this._alReadyPrinted = false;
         this.initialize();
@@ -56,31 +56,31 @@ class CalculatorController {
 
         switch (buttonValue) {
             case "ac":
-                this.clearDisplayExpression();
+                this.buttonAC();
                 break;
             case "ce":
-                this.ce();
+                this.buttonCE();
                 break;
             case "porcento":
-                this.addOperation("%");
+                this.prepareInputElements("%");
                 break;
             case "divisao":
-                this.addOperation("/");    
+                this.prepareInputElements("/");    
                 break;
             case "multiplicacao":
-                this.addOperation("*");
+                this.prepareInputElements("*");
                 break;
             case "subtracao":
-                this.addOperation("-");
+                this.prepareInputElements("-");
                 break;
             case "soma":
-                this.addOperation("+");
+                this.prepareInputElements("+");
                 break;
             case "igual":
-                this.addOperation("=");
+                this.prepareInputElements("=");
                 break;
             case "ponto":
-                this.addOperation(".");
+                this.prepareInputElements(".");
                 break;
             case "0":        
             case "1":
@@ -93,7 +93,7 @@ class CalculatorController {
             case "8":
             case "9":
             case "10":
-                this.addOperation(parseInt(buttonValue));
+                this.prepareInputElements(parseInt(buttonValue));
                 break;
             default:
                 this.setDisplayResult = "Error";
@@ -101,15 +101,14 @@ class CalculatorController {
         }
     }
     
-    clearDisplayExpression(){
+    buttonAC(){
         this.setDisplayResult = "0";
-        this._allElementsInOperator = [];
+        this._ElementsForCalculate = [];
         this.setLastOperatorInExpression = "";
         this.setLastNumberInExpression = "";
-        this.setAlReadyPrinted = false;
     };
 
-    ce() {
+    buttonCE() {
         let lastElementInOperation = this.returnLastElementInOperation();
 
         if(isNaN(lastElementInOperation)){
@@ -128,7 +127,8 @@ class CalculatorController {
     }
 
     printDisplay(value, cleanDisplay){
-        let numberOfTermsInExpression = this.getAllElementsInOperator.length;
+        this.setDisplayWasPrinted = true;
+        
         if(cleanDisplay)
             this.setDisplayResult = "----------";
         else if(this.expressionCalculateIsEmpty())
@@ -137,121 +137,127 @@ class CalculatorController {
             this.setDisplayResult = value;
     }
 
-    addOperation(currentValue){
-        let amountElementsCurrent = this.getAllElementsInOperator.length;
-        this.setAlReadyPrinted = false;
-        // if the last value of expression is different of number, AND, not exist expression, enter.
+    prepareInputElements(currentValue){
+
+        let amountElementsCurrent = this.getElementsForCalculate.length;
+        let lastElementInOperation = this.returnLastElementInOperation();
+        this.setDisplayWasPrinted = false;
+
         if(isNaN(this.returnLastElementInOperation())){     
 
-            if(this.isOperator(currentValue) && this.isOperator(this.returnLastElementInOperation())){
+            if(this.isOperator(currentValue) && this.isOperator(lastElementInOperation)){
                 this.replaceLastElementInOperation(currentValue);
             
-            }else if( this.isDot(currentValue) || this.isDot(this.returnLastElementInOperation()) ){
-    
-                if(this.isOperator(this.returnLastElementInOperation())){
-                    this.pushExpressionCalculate(currentValue)
+            }else if( this.isDot(currentValue) || this.isDot(lastElementInOperation) ){
+                if(this.isOperator(lastElementInOperation)){
+                    this.addExpressionToCalculate(currentValue)
                 }else{
-                    let newValue = this.returnLastElementInOperation().toString() + currentValue.toString();
-                    let replaceTheLastExpression = true;
-                    this.pushExpressionCalculate(parseFloat(newValue), replaceTheLastExpression);
+                    this.addNumberToCalculate(lastElementInOperation, currentValue);
                 }
+
             }else if( Object.is(amountElementsCurrent, 1) && !isNaN(currentValue)) {
-                let newValue = this.returnLastElementInOperation().toString() + currentValue.toString();
-                    let replaceTheLastExpression = true;
-                    this.pushExpressionCalculate(parseFloat(newValue), replaceTheLastExpression);
+                this.addNumberToCalculate(lastElementInOperation, currentValue);
+       
+            }else
+                this.addExpressionToCalculate(currentValue)
         
-            }else                                                       //TODO tratar igual antes desse 'else', quando ele vier
-                this.pushExpressionCalculate(currentValue)
         }else{
+            if( !isNaN(currentValue) ){
+                this.addNumberToCalculate(lastElementInOperation, currentValue);
+            
+            }else if( this.isOperator(currentValue) ){
+                this.addExpressionToCalculate(currentValue);
 
-            if(this.isOperator(currentValue)){
-                this.pushExpressionCalculate(currentValue);
-
-            }else if( this.isDot(currentValue)){
+            }else if( this.isDot(currentValue) ){
                 if(this.expressionCalculateIsEmpty())
-                    this.pushExpressionCalculate(currentValue);
+                    this.addExpressionToCalculate(currentValue);
                 else{
-                    let newValue = this.returnLastElementInOperation().toString() + currentValue.toString() + "0";
-                    let replaceTheLastExpression = true;
-                    this.pushExpressionCalculate(parseFloat(newValue), replaceTheLastExpression);
+                    let complementForNumberFloat = "0";
+                    this.addNumberToCalculate(lastElementInOperation, currentValue, complementForNumberFloat);
                 }
 
-            }else if( Object.is(currentValue, '=') ){
+            }else if( this.isOperatorEqual(currentValue) ){
                 if(this.expressionCalculateIsEmpty()){
                     let cleanDisplay = true;
                     return this.printDisplay(currentValue, cleanDisplay);
                 }else
-                    this.pushExpressionCalculate(currentValue);
-            
-            }else{          //TODO Melhorar condição, trocar 'else' por 'else if(é um numero)'
-                let newValue = this.returnLastElementInOperation().toString() + currentValue.toString();
-                let replaceTheLastExpression = true;
-                this.pushExpressionCalculate(parseFloat(newValue), replaceTheLastExpression);
+                    this.addExpressionToCalculate(currentValue);
             }
         }
+
         if(!this.getAlReadyPrinted)
             this.printDisplay(currentValue);
     }
 
-    pushExpressionCalculate(currentValue, replaceTheLastExpression){
-        let maximumOfElements = 4;
-        let amountElementsCurrent = this.getAllElementsInOperator.length;
+    addNumberToCalculate(lastElementInOperation, currentValue, complementForNumberFloat){
         
-        if(this.expressionCalculateIsEmpty()){
-            this.inserElementForOperation(currentValue);
-            return            
+        if(complementForNumberFloat){
+            let newValue = parseFloat( lastElementInOperation.toString() + currentValue.toString() + complementForNumberFloat );
+            this.replaceLastElementInOperation(newValue);
+            this.printDisplay(newValue);
+        
+        }else{
+            let newValue = parseFloat( lastElementInOperation.toString() + currentValue.toString() );
+            this.replaceLastElementInOperation(newValue);
+            this.printDisplay(newValue);
         }
-        if(replaceTheLastExpression){
-            this._allElementsInOperator[this.lastIndexOfExpression()] = currentValue;
-            this.printDisplay(currentValue);
-            this.setAlReadyPrinted = true;
+    }
+
+    addExpressionToCalculate(currentValue){
+        let maximumOfElements = 4;
+        let amountElementsCurrent = this.getElementsForCalculate.length;
         
-        }else if( amountElementsCurrent <= maximumOfElements){
+        if(this.expressionCalculateIsEmpty())
+            this.inserElementForOperation(currentValue);
+        
+        else if( amountElementsCurrent <= maximumOfElements ){
             let penultimateExpression = this.returnLastElementInOperation();
             this.inserElementForOperation(currentValue);
             amountElementsCurrent ++;
 
-            if( this.isOperator(penultimateExpression) && Object.is(currentValue, '=')){
-                this.getAllElementsInOperator.pop();    
+            if( this.isOperator(penultimateExpression) && this.isOperatorEqual(currentValue) ){
+                this.removeLastElementsInOperation();
                 this.captureLastOperatorAndLastNumber();
                 this.inserAllElementForOperation(this.getLastNumberCalculated, currentValue);
                 this.calculate()
             
-            }else if( Object.is(amountElementsCurrent, maximumOfElements))
+            }else if( Object.is(amountElementsCurrent, maximumOfElements)){
+                this.captureLastOperatorAndLastNumber();
                 this.calculate();
-            
-            else if( Object.is(this.returnLastElementInOperation(), "=") &&  Object.is(amountElementsCurrent, 2) )
-                this.getAllElementsInOperator.pop();
+            }        
+            else if( this.isOperatorEqual(this.returnLastElementInOperation()) &&  Object.is(amountElementsCurrent, 2) )
+                this.removeLastElementsInOperation();
+        }else{
+            console.log("*** Exception: " + "\n"
+                        + "207..: addExpressionToCalculate()"
+                        + "Current Value" + currentValue + "\n"
+                        + "Elements in Operation" + this.getElementsForCalculate );
         }
     }
 
-    calculate(isOperatorEqual){
+    calculate(){
         
-        let lastCurrentOperator = this.getAllElementsInOperator.pop();
+        let lastElement = this.getElementsForCalculate.pop();
 
-        if( Object.is(lastCurrentOperator, '=') ){
+        if( this.isOperatorEqual(lastElement) ){
 
-            this.captureLastOperatorAndLastNumber();
             //TODO Tratar o caso especifico de que, se tem uma operação realizada e receber multiplos '=', tem que OPERAR(+, -, *) o valor atual com o ultimo numero.            
-            let resultFirstExpression = this.calculateFirstOperation();
-            this._allElementsInOperator = [resultFirstExpression, this.getLastOperatorInExpression];
-            this.printDisplay(resultFirstExpression);
-            this.setAlReadyPrinted = true;
+            let resultFirstTerm = this.calculateFirstTermOfOperation();
+            this._ElementsForCalculate = [resultFirstTerm, this.getLastOperatorOfTheExpression];
+            this.printDisplay(resultFirstTerm);
 
-        }else if( Object.is(lastCurrentOperator, '%')){
-            this.captureLastOperatorAndLastNumber();
-            let resultFirstExpression = this.calculateFirstOperation();
-            resultFirstExpression /= 100;
-            this._allElementsInOperator = [resultFirstExpression]
-            this.printDisplay(resultFirstExpression);
-            this.setAlReadyPrinted = true;
+        }else if( Object.is(lastElement, '%')){
+
+            let resultFirstTerm = this.calculateFirstTermOfOperation();
+            resultFirstTerm /= 100;
+            this._ElementsForCalculate = [resultFirstTerm]
+            this.printDisplay(resultFirstTerm);
 
         }else{
-            this.captureLastOperatorAndLastNumber();
-            let resultFirstExpression = this.calculateFirstOperation();
-            this._allElementsInOperator = [resultFirstExpression, lastCurrentOperator];
-            this.printDisplay(resultFirstExpression);
-            this.setAlReadyPrinted = true;
+
+            let resultFirstTerm = this.calculateFirstTermOfOperation();
+            this._ElementsForCalculate = [resultFirstTerm, lastElement];
+            this.printDisplay(resultFirstTerm);
         }
     }
 
@@ -265,8 +271,8 @@ class CalculatorController {
         
         for(index; index >= 0; index --){
             
-            if(this.isOperator(this.getAllElementsInOperator[index])){
-                this.setLastOperatorInExpression = this.getAllElementsInOperator[index];
+            if(this.isOperator(this.getElementsForCalculate[index])){
+                this.setLastOperatorInExpression = this.getElementsForCalculate[index];
                 break
             }
         }
@@ -277,23 +283,20 @@ class CalculatorController {
         
         for(index; index >= 0; index --){
             
-            if(!this.isOperator(this.getAllElementsInOperator[index])){
-                this.setLastNumberInExpression = this.getAllElementsInOperator[index];        
+            if(!this.isOperator(this.getElementsForCalculate[index])){
+                this.setLastNumberInExpression = this.getElementsForCalculate[index];        
                 break
             }
         }
-        //  if( Object.is(this.getFirstNumberInsertedSaved, ""))
-        //     this.setFirstNumberInsertedSaved = this.getLastNumberCalculated;
-
     }
 
-    calculateFirstOperation(){
-        let resultFirstOperation = eval(this.getAllElementsInOperator.join(""));
+    calculateFirstTermOfOperation(){
+        let resultFirstOperation = eval(this.getElementsForCalculate.join(""));
         return resultFirstOperation;
     }
 
     expressionCalculateIsEmpty(){
-        if( Object.is(this.getAllElementsInOperator.length, 0))
+        if( Object.is(this.getElementsForCalculate.length, 0))
             return true;
         else
             return false;
@@ -301,19 +304,22 @@ class CalculatorController {
 
     lastIndexOfExpression(){
         if(this.expressionCalculateIsEmpty())
-            return this._allElementsInOperator.length;
+            return this._ElementsForCalculate.length;
         else
-            return (this._allElementsInOperator.length - 1);
+            return (this._ElementsForCalculate.length - 1);
     }
 
     returnLastElementInOperation(){
         if(this.expressionCalculateIsEmpty())
-            return this.getAllElementsInOperator;
-        return this._allElementsInOperator[this.lastIndexOfExpression()];
+            return this.getElementsForCalculate;
+        return this._ElementsForCalculate[this.lastIndexOfExpression()];
     }
 
     replaceLastElementInOperation(value){
-        this._allElementsInOperator[this.lastIndexOfExpression()] = value;
+        if(this.expressionCalculateIsEmpty())
+            this.inserElementForOperation(value);
+        else
+            this._ElementsForCalculate[this.lastIndexOfExpression()] = value;
     }
 
     isOperator(value){
@@ -326,8 +332,14 @@ class CalculatorController {
         return false
     }
 
+    isOperatorEqual(value){
+        if( Object.is(value, "="))
+            return true
+        return false
+    }
+
     removeLastElementsInOperation(){
-        this.getAllElementsInOperator.pop();
+        this.getElementsForCalculate.pop();
     }
 
     inserElementForOperation(value){
@@ -347,39 +359,39 @@ class CalculatorController {
         return value;
     }
 
-    get getAllElementsInOperator(){
-        return this._allElementsInOperator;
+    get getElementsForCalculate(){
+        return this._ElementsForCalculate;
     }
 
     set setExpressionCalculate(value){
-        this._allElementsInOperator.push(value);
+        this._ElementsForCalculate.push(value);
     }
 
-    get getDisplayResult(){
-        return this._DisplayResult;
-    }
+    // get getDisplayResult(){
+    //     return this._DisplayResult;
+    // }
 
     set setDisplayResult(value){
         this._DisplayResult.innerHTML = value;
     }
 
-    get getDisplayHour(){
-        return this._displayHour;
-    }
+    // get getDisplayHour(){
+    //     return this._displayHour;
+    // }
 
     set setDisplayHour(value){
         this._displayHour.innerHTML = value;
     }
 
-    get getFirstNumberInsertedSaved(){
-        return this._FirstNumberInsertedSaved;
-    }
+    // get getFirstNumberInsertedSaved(){
+    //     return this._FirstNumberInsertedSaved;
+    // }
 
-    set setFirstNumberInsertedSaved(value){
-        this._FirstNumberInsertedSaved = value;
-    }
+    // set setFirstNumberInsertedSaved(value){
+    //     this._FirstNumberInsertedSaved = value;
+    // }
 
-    get getLastOperatorInExpression(){
+    get getLastOperatorOfTheExpression(){
         return this._lastOperatorSaved;
     }
 
@@ -399,13 +411,13 @@ class CalculatorController {
         return this._alReadyPrinted;
     }
 
-    set setAlReadyPrinted(value){
+    set setDisplayWasPrinted(value){
         this._alReadyPrinted = value;
     }
 
-    get getDisplayDate(){
-        return this._displayDate;
-    }
+    // get getDisplayDate(){
+    //     return this._displayDate;
+    // }
 
     set setDisplayDate(value){
         this._displayDate.innerHTML = value;
