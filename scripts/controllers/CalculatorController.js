@@ -3,8 +3,9 @@ class CalculatorController {
     
     constructor(){
         this._local = ("pt-bt");
-        this._lastOperator = "";
-        this._lastNumber = "";
+        this._lastOperatorSaved = "";
+        this._lastNumberSaved = "";
+        this._FirstNumberInsertedSaved = "";
         this._DisplayResult = document.querySelector('#display');
         this._displayHour = document.querySelector('#hora');
         this._displayDate = document.querySelector('#data');
@@ -110,16 +111,18 @@ class CalculatorController {
        this.printDisplay();
     }
 
-    printDisplay(){
+    printDisplay(cleanDisplay){
         let numberOfTermsInExpression = this.getExpressionCalculate.length;
-        
-        if(numberOfTermsInExpression === 2)
+
+        if( Object.is(numberOfTermsInExpression, 2) )
             this.setDisplayResult = this.getExpressionCalculate.join("");
         
-        else if(numberOfTermsInExpression === 3)
+        else if( Object.is(numberOfTermsInExpression, 3) )
             this.setDisplayResult = this.lastExpressionValue();
         
-        else 
+        else if(cleanDisplay)
+            this.setDisplayResult = "----------";
+        else
             this.setDisplayResult = this.getExpressionCalculate.toString();
     }
 
@@ -130,6 +133,7 @@ class CalculatorController {
 
             if(this.isOperator(currentValue) && this.isOperator(this.lastExpressionValue())){
                 this._ExpressionCalculate[this.replaceLastExpression()] = currentValue;
+                // this.setLastOperator = currentValue;
             
             }else if( this.isDot(currentValue) || this.isDot(this.lastExpressionValue()) ){
     
@@ -140,17 +144,30 @@ class CalculatorController {
                     let replaceTheLastExpression = true;
                     this.pushExpressionCalculate(parseFloat(newValue), replaceTheLastExpression);
                 }
-            }else
+            }else if( Object.is(currentValue, '=')){
+
+            }else                                                       //TODO tratar igual antes desse 'else', quando ele vier
+                // this.setLastNumber = parseFloat(currentValue);
                 this.pushExpressionCalculate(currentValue)
         }else{
 
             if(this.isOperator(currentValue)){
+                // this.setLastOperator = currentValue;
                 this.pushExpressionCalculate(currentValue);
 
             }else if( this.isDot(currentValue) && this.expressionCalculateIsEmpty()){
                 this.pushExpressionCalculate(currentValue);
-                
+           
+            }else if( Object.is(currentValue, '=') ){
+                if(this.expressionCalculateIsEmpty()){
+                    let cleanDisplay = true;
+                    this.printDisplay(cleanDisplay);
+                    return
+                }
+                this.pushExpressionCalculate(currentValue);
+            
             }else{
+                // this.setLastNumber = parseFloat(currentValue);
                 let newValue = this.lastExpressionValue().toString() + currentValue.toString();
                 let replaceTheLastExpression = true;
                 this.pushExpressionCalculate(parseFloat(newValue), replaceTheLastExpression);
@@ -160,70 +177,88 @@ class CalculatorController {
         this.printDisplay();
     }
 
-    pushExpressionCalculate(value, conditionReplace){
-        
-        let expressionComplet = 4;
+    pushExpressionCalculate(currentValue, conditionReplace){
+    
+        let termMaximumInExpression = 4;
         if(this.expressionCalculateIsEmpty()){
-            this.setExpressionCalculate = value;
-            return
+            this.setExpressionCalculate = currentValue;
+            return            
         }
         if(conditionReplace){
-            this._ExpressionCalculate[this.lastIndexOfExpression()] = value;
+            this._ExpressionCalculate[this.lastIndexOfExpression()] = currentValue;
             return
         
-        }else if( this._ExpressionCalculate.length < expressionComplet){
-                this.setExpressionCalculate = value;
-            if( this._ExpressionCalculate.length === expressionComplet){
+        }else if( this._ExpressionCalculate.length < termMaximumInExpression){
+            this.setExpressionCalculate = currentValue;
+            //TODO se |3|+| proximo for =, vai entrar aqui e tem que ser tratado.
+            if( this.isOperator(this.lastExpressionValue()) && Object.is(currentValue, '=')){
+                console.log("primeiro salvo..:", this.getFirstNumberInsertedSaved);
+                this.getExpressionCalculate.pop();    
+                this.setExpressionCalculate = this.getFirstNumberInsertedSaved;
+                this.setExpressionCalculate = currentValue;
+                this.calculate()
+            
+            }else if( Object.is(this._ExpressionCalculate.length, termMaximumInExpression))
                 this.calculate();
-                return
-            }
-            return
         }
     }
 
-    calculate(){
+    calculate(isOperatorEqual){
         
-        let lastOperator = this.getExpressionCalculate.pop();
-        
-        if( lastOperator == '='){
-            if(this._lastOperator == "")
-                this.printDisplay();
+        let lastCurrentOperator = this.getExpressionCalculate.pop();
+
+        if( Object.is(lastCurrentOperator, '=') ){
+            this.captureLastOperatorAndLastNumber();
+            console.log(this.getLastOperator, this.getLastNumber, "..:", this.getExpressionCalculate);
+
             //TODO Tratar o caso especifico de que, se tem uma operação realizada e receber multiplos '=', tem que OPERAR(+, -, *) o valor atual com o ultimo numero.            
-            else{
-                let lastOperatorOfExpression = this.getLastOperatorExpression();
-                let lastNumberOfExpression = this.getLastNumberExpression();
-                let resultFirstExpression = this.calculateFirstOperation();
-            }
-        }else if( lastOperator == '%'){
+            let resultFirstExpression = this.calculateFirstOperation();
+            this._ExpressionCalculate = [resultFirstExpression, this.getLastOperator];
+            console.log(this.getLastOperator, this.getLastNumber, "..:", this.getExpressionCalculate);
+
+        }else if( Object.is(lastCurrentOperator, '%')){
+            this.captureLastOperatorAndLastNumber();
             let resultFirstExpression = this.calculateFirstOperation();
             resultFirstExpression /= 100;
             this._ExpressionCalculate = [resultFirstExpression]
 
         }else{
+            this.captureLastOperatorAndLastNumber();
             let resultFirstExpression = this.calculateFirstOperation();
-            this._ExpressionCalculate = [resultFirstExpression, lastOperator];
+            this._ExpressionCalculate = [resultFirstExpression, lastCurrentOperator];
         }
     }
 
-    getLastOperatorExpression(){
+    captureLastOperatorAndLastNumber(){
+        this.returnLastOperatorExpression();
+        this.returnLastNumberExpression();
+    }
+
+    returnLastOperatorExpression(){
         let index = this.lastIndexOfExpression();
         
         for(index; index >= 0; index --){
             
-            if(this.isOperator(this.getExpressionCalculate[index]))
-                this.setLastOperator = this.getExpressionCalculate[index];        
+            if(this.isOperator(this.getExpressionCalculate[index])){
+                this.setLastOperator = this.getExpressionCalculate[index];
+                break;
+            }
         }
 
     }
 
-    getLastNumberExpression(){
+    returnLastNumberExpression(){
         let index = this.lastIndexOfExpression();
         
         for(index; index >= 0; index --){
             
-            if(!this.isOperator(this.getExpressionCalculate[index]))
+            if(!this.isOperator(this.getExpressionCalculate[index])){
                 this.setLastNumber = this.getExpressionCalculate[index];        
+                break;
+            }
         }
+        if( Object.is(this.getFirstNumberInsertedSaved, ""))
+            this.setFirstNumberInsertedSaved = this.getLastNumber;
 
     }
 
@@ -233,7 +268,7 @@ class CalculatorController {
     }
 
     expressionCalculateIsEmpty(){
-        if(this.getExpressionCalculate.length === 0)
+        if( Object.is(this.getExpressionCalculate.length, 0))
             return true;
         else
             return false;
@@ -260,11 +295,10 @@ class CalculatorController {
     }
 
     isDot(value){
-        if(value == ".")
+        if( Object.is(value, "."))
             return true
         return false
     }
-
 
     get getExpressionCalculate(){
         return this._ExpressionCalculate;
@@ -290,12 +324,28 @@ class CalculatorController {
         this._displayHour.innerHTML = value;
     }
 
+    get getFirstNumberInsertedSaved(){
+        return this._FirstNumberInsertedSaved;
+    }
+
+    set setFirstNumberInsertedSaved(value){
+        this._FirstNumberInsertedSaved = value;
+    }
+
+    get getLastOperator(){
+        return this._lastOperatorSaved;
+    }
+
     set setLastOperator(value){
-        this._lastOperator = value;
+        this._lastOperatorSaved = value;
+    }
+
+    get getLastNumber(){
+        return this._lastNumberSaved;
     }
 
     set setLastNumber(value){
-        this._lastNumber = value;
+        this._lastNumberSaved = value;
     }
 
     get getDisplayDate(){
