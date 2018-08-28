@@ -9,7 +9,9 @@ class CalculatorController {
         this._DisplayResult = document.querySelector('#display');
         this._displayHour = document.querySelector('#hora');
         this._displayDate = document.querySelector('#data');
-        this._ExpressionCalculate = [];             //expressao (vetor)
+        this._allElementsInOperator = [];                            // expressao (vetor)
+        
+        this._alReadyPrinted = false;
         this.initialize();
         this.initButtonsEvents();
     }
@@ -98,56 +100,63 @@ class CalculatorController {
                 break;
         }
     }
-
+    
     clearDisplayExpression(){
         this.setDisplayResult = "0";
-        this._ExpressionCalculate = [];
+        this._allElementsInOperator = [];
         this.setLastOperatorInExpression = "";
         this.setLastNumberInExpression = "";
+        this.setAlReadyPrinted = false;
     };
 
     ce() {
-       this.getExpressionCalculate.pop();
-       this.printDisplay();
+        let lastElementInOperation = this.returnLastElementInOperation();
+
+        if(isNaN(lastElementInOperation)){
+            this.removeLastElementsInOperation();
+            this.printDisplay(this.returnLastElementInOperation());
+            return
+        
+        }else{
+            let newValue = this.removeLastChar(lastElementInOperation);
+            if(newValue != ""){
+                this.replaceLastElementInOperation(newValue);
+                this.printDisplay(this.returnLastElementInOperation());
+            }else
+                this.printDisplay(this.returnLastElementInOperation());
+        }
     }
 
-    printDisplay(cleanDisplay){
-        let numberOfTermsInExpression = this.getExpressionCalculate.length;
-
-        if( Object.is(numberOfTermsInExpression, 2) )
-            this.setDisplayResult = this.getExpressionCalculate.join("");
-        
-        else if( Object.is(numberOfTermsInExpression, 3) )
-            this.setDisplayResult = this.returnLastExpressionValue();
-        
-        else if( this.isDot(this.getExpressionCalculate.toString()))
-            this.setDisplayResult = "0" + this.getExpressionCalculate.toString();
-            
-        else if(cleanDisplay)
+    printDisplay(value, cleanDisplay){
+        let numberOfTermsInExpression = this.getAllElementsInOperator.length;
+        if(cleanDisplay)
             this.setDisplayResult = "----------";
+        else if(this.expressionCalculateIsEmpty())
+            this.setDisplayResult = "0";
         else
-            this.setDisplayResult = this.getExpressionCalculate.toString();
+            this.setDisplayResult = value;
     }
 
     addOperation(currentValue){
-        let amountElementsCurrent = this.getExpressionCalculate.length;
+        let amountElementsCurrent = this.getAllElementsInOperator.length;
+        this.setAlReadyPrinted = false;
         // if the last value of expression is different of number, AND, not exist expression, enter.
-        if(isNaN(this.returnLastExpressionValue())){     
+        if(isNaN(this.returnLastElementInOperation())){     
 
-            if(this.isOperator(currentValue) && this.isOperator(this.returnLastExpressionValue())){
-                this._ExpressionCalculate[this.replaceLastExpression()] = currentValue;
+            if(this.isOperator(currentValue) && this.isOperator(this.returnLastElementInOperation())){
+                this.replaceLastElementInOperation(currentValue);
             
-            }else if( this.isDot(currentValue) || this.isDot(this.returnLastExpressionValue()) ){
+            }else if( this.isDot(currentValue) || this.isDot(this.returnLastElementInOperation()) ){
     
-                if(this.isOperator(this.returnLastExpressionValue())){
+                if(this.isOperator(this.returnLastElementInOperation())){
                     this.pushExpressionCalculate(currentValue)
                 }else{
-                    let newValue = this.returnLastExpressionValue().toString() + currentValue.toString();
+                    let newValue = this.returnLastElementInOperation().toString() + currentValue.toString();
                     let replaceTheLastExpression = true;
                     this.pushExpressionCalculate(parseFloat(newValue), replaceTheLastExpression);
                 }
             }else if( Object.is(amountElementsCurrent, 1) && !isNaN(currentValue)) {
-                let newValue = this.returnLastExpressionValue().toString() + currentValue.toString();
+                let newValue = this.returnLastElementInOperation().toString() + currentValue.toString();
                     let replaceTheLastExpression = true;
                     this.pushExpressionCalculate(parseFloat(newValue), replaceTheLastExpression);
         
@@ -162,7 +171,7 @@ class CalculatorController {
                 if(this.expressionCalculateIsEmpty())
                     this.pushExpressionCalculate(currentValue);
                 else{
-                    let newValue = this.returnLastExpressionValue().toString() + currentValue.toString() + "0";
+                    let newValue = this.returnLastElementInOperation().toString() + currentValue.toString() + "0";
                     let replaceTheLastExpression = true;
                     this.pushExpressionCalculate(parseFloat(newValue), replaceTheLastExpression);
                 }
@@ -170,74 +179,79 @@ class CalculatorController {
             }else if( Object.is(currentValue, '=') ){
                 if(this.expressionCalculateIsEmpty()){
                     let cleanDisplay = true;
-                    this.printDisplay(cleanDisplay);
+                    return this.printDisplay(currentValue, cleanDisplay);
                 }else
                     this.pushExpressionCalculate(currentValue);
             
-            }else{
-                let newValue = this.returnLastExpressionValue().toString() + currentValue.toString();
+            }else{          //TODO Melhorar condição, trocar 'else' por 'else if(é um numero)'
+                let newValue = this.returnLastElementInOperation().toString() + currentValue.toString();
                 let replaceTheLastExpression = true;
                 this.pushExpressionCalculate(parseFloat(newValue), replaceTheLastExpression);
             }
         }
-
-        this.printDisplay();
+        if(!this.getAlReadyPrinted)
+            this.printDisplay(currentValue);
     }
 
-    pushExpressionCalculate(currentValue, conditionReplace){
+    pushExpressionCalculate(currentValue, replaceTheLastExpression){
         let maximumOfElements = 4;
-        let amountElementsCurrent = this.getExpressionCalculate.length;
+        let amountElementsCurrent = this.getAllElementsInOperator.length;
         
         if(this.expressionCalculateIsEmpty()){
-            this.setExpressionCalculate = currentValue;
+            this.inserElementForOperation(currentValue);
             return            
         }
-        if(conditionReplace)
-            this._ExpressionCalculate[this.lastIndexOfExpression()] = currentValue;
+        if(replaceTheLastExpression){
+            this._allElementsInOperator[this.lastIndexOfExpression()] = currentValue;
+            this.printDisplay(currentValue);
+            this.setAlReadyPrinted = true;
         
-        else if( amountElementsCurrent <= maximumOfElements){
-            let penultimateExpression = this.returnLastExpressionValue();
-            this.setExpressionCalculate = currentValue;
+        }else if( amountElementsCurrent <= maximumOfElements){
+            let penultimateExpression = this.returnLastElementInOperation();
+            this.inserElementForOperation(currentValue);
             amountElementsCurrent ++;
 
             if( this.isOperator(penultimateExpression) && Object.is(currentValue, '=')){
-                this.getExpressionCalculate.pop();    
+                this.getAllElementsInOperator.pop();    
                 this.captureLastOperatorAndLastNumber();
-                this.setExpressionCalculate = this.getLastNumberInExpression;
-                this.setExpressionCalculate = currentValue;
+                this.inserAllElementForOperation(this.getLastNumberCalculated, currentValue);
                 this.calculate()
             
             }else if( Object.is(amountElementsCurrent, maximumOfElements))
                 this.calculate();
             
-            else if( Object.is(this.returnLastExpressionValue(), "=") &&  Object.is(amountElementsCurrent, 2) )
-                this.getExpressionCalculate.pop();
+            else if( Object.is(this.returnLastElementInOperation(), "=") &&  Object.is(amountElementsCurrent, 2) )
+                this.getAllElementsInOperator.pop();
         }
     }
 
     calculate(isOperatorEqual){
         
-        let lastCurrentOperator = this.getExpressionCalculate.pop();
+        let lastCurrentOperator = this.getAllElementsInOperator.pop();
 
         if( Object.is(lastCurrentOperator, '=') ){
 
             this.captureLastOperatorAndLastNumber();
-            console.log(this.getLastOperatorInExpression, this.getLastNumberInExpression);
-
             //TODO Tratar o caso especifico de que, se tem uma operação realizada e receber multiplos '=', tem que OPERAR(+, -, *) o valor atual com o ultimo numero.            
             let resultFirstExpression = this.calculateFirstOperation();
-            this._ExpressionCalculate = [resultFirstExpression, this.getLastOperatorInExpression];
+            this._allElementsInOperator = [resultFirstExpression, this.getLastOperatorInExpression];
+            this.printDisplay(resultFirstExpression);
+            this.setAlReadyPrinted = true;
 
         }else if( Object.is(lastCurrentOperator, '%')){
             this.captureLastOperatorAndLastNumber();
             let resultFirstExpression = this.calculateFirstOperation();
             resultFirstExpression /= 100;
-            this._ExpressionCalculate = [resultFirstExpression]
+            this._allElementsInOperator = [resultFirstExpression]
+            this.printDisplay(resultFirstExpression);
+            this.setAlReadyPrinted = true;
 
         }else{
             this.captureLastOperatorAndLastNumber();
             let resultFirstExpression = this.calculateFirstOperation();
-            this._ExpressionCalculate = [resultFirstExpression, lastCurrentOperator];
+            this._allElementsInOperator = [resultFirstExpression, lastCurrentOperator];
+            this.printDisplay(resultFirstExpression);
+            this.setAlReadyPrinted = true;
         }
     }
 
@@ -251,8 +265,8 @@ class CalculatorController {
         
         for(index; index >= 0; index --){
             
-            if(this.isOperator(this.getExpressionCalculate[index])){
-                this.setLastOperatorInExpression = this.getExpressionCalculate[index];
+            if(this.isOperator(this.getAllElementsInOperator[index])){
+                this.setLastOperatorInExpression = this.getAllElementsInOperator[index];
                 break
             }
         }
@@ -263,42 +277,43 @@ class CalculatorController {
         
         for(index; index >= 0; index --){
             
-            if(!this.isOperator(this.getExpressionCalculate[index])){
-                this.setLastNumberInExpression = this.getExpressionCalculate[index];        
+            if(!this.isOperator(this.getAllElementsInOperator[index])){
+                this.setLastNumberInExpression = this.getAllElementsInOperator[index];        
                 break
             }
         }
         //  if( Object.is(this.getFirstNumberInsertedSaved, ""))
-        //     this.setFirstNumberInsertedSaved = this.getLastNumberInExpression;
+        //     this.setFirstNumberInsertedSaved = this.getLastNumberCalculated;
 
     }
 
     calculateFirstOperation(){
-        let resultFirstOperation = eval(this.getExpressionCalculate.join(""));
+        let resultFirstOperation = eval(this.getAllElementsInOperator.join(""));
         return resultFirstOperation;
     }
 
     expressionCalculateIsEmpty(){
-        if( Object.is(this.getExpressionCalculate.length, 0))
+        if( Object.is(this.getAllElementsInOperator.length, 0))
             return true;
         else
             return false;
     }
 
     lastIndexOfExpression(){
-        return (this._ExpressionCalculate.length - 1);
+        if(this.expressionCalculateIsEmpty())
+            return this._allElementsInOperator.length;
+        else
+            return (this._allElementsInOperator.length - 1);
     }
 
-    returnLastExpressionValue(){
+    returnLastElementInOperation(){
         if(this.expressionCalculateIsEmpty())
-            return this.getExpressionCalculate;
-        return this._ExpressionCalculate[this.lastIndexOfExpression()];
+            return this.getAllElementsInOperator;
+        return this._allElementsInOperator[this.lastIndexOfExpression()];
     }
 
-    replaceLastExpression(){
-        if(this.expressionCalculateIsEmpty())
-            return this._ExpressionCalculate.length
-        return this.lastIndexOfExpression();
+    replaceLastElementInOperation(value){
+        this._allElementsInOperator[this.lastIndexOfExpression()] = value;
     }
 
     isOperator(value){
@@ -311,12 +326,33 @@ class CalculatorController {
         return false
     }
 
-    get getExpressionCalculate(){
-        return this._ExpressionCalculate;
+    removeLastElementsInOperation(){
+        this.getAllElementsInOperator.pop();
+    }
+
+    inserElementForOperation(value){
+        this.setExpressionCalculate = value;
+    }
+
+    inserAllElementForOperation(value_1, value_2){
+        if(value_1)
+            this.setExpressionCalculate = value_1;
+        if(value_2)
+            this.setExpressionCalculate = value_2;
+    }
+
+    removeLastChar(value){
+        value = value.toString();
+        value = value.substring(0, value.length - 1)
+        return value;
+    }
+
+    get getAllElementsInOperator(){
+        return this._allElementsInOperator;
     }
 
     set setExpressionCalculate(value){
-        this._ExpressionCalculate.push(value);
+        this._allElementsInOperator.push(value);
     }
 
     get getDisplayResult(){
@@ -351,12 +387,20 @@ class CalculatorController {
         this._lastOperatorSaved = value;
     }
 
-    get getLastNumberInExpression(){
+    get getLastNumberCalculated(){
         return this._lastNumberSaved;
     }
 
     set setLastNumberInExpression(value){
         this._lastNumberSaved = value;
+    }
+
+    get getAlReadyPrinted(){
+        return this._alReadyPrinted;
+    }
+
+    set setAlReadyPrinted(value){
+        this._alReadyPrinted = value;
     }
 
     get getDisplayDate(){
