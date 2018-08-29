@@ -14,6 +14,7 @@ class CalculatorController {
         this._displayWasPrinted = false;
         this.initialize();
         this.initButtonsEvents();
+        this.initKeyBoardEvents();
     }
     
     initialize(){
@@ -50,6 +51,75 @@ class CalculatorController {
         events.split(" ").forEach(event => {
             element.addEventListener(event, functionClick, false)
         })
+    }
+
+    copyToClipboard(){
+        
+        let input = document.createElement('input');
+        input.value = this._DisplayResult;
+        //            this._DisplayResult = document.querySelector('#display');
+
+        document.body.appendChild(input);
+        input.select();
+
+        document.execCommand("Copy");
+        input.remove();
+    }
+
+    pasteFromClipboard(){
+        document.addEventListener('paste', e =>{
+
+            let text = e.clipboardData.getData('Text');
+            
+            this.setDisplayResult = parseFloat(text);
+        })
+    }
+
+    initKeyBoardEvents(){
+        document.addEventListener('keyup', buttonKeyBoard =>{
+            console.log(buttonKeyBoard.key);
+            switch (buttonKeyBoard.key) {
+                case "Escape":
+                    this.buttonAC();
+                    break;
+                case "Backspace":
+                    this.buttonCE();
+                    break;
+                case "%":
+                case "/":
+                case "*":
+                case "-":
+                case "+":
+                this.prepareInputElements(buttonKeyBoard.key);
+                break;
+                case "=":
+                case "Enter":
+                    this.prepareInputElements("=");
+                    break;
+                case ".":
+                    this.prepareInputElements(buttonKeyBoard.key);
+                    break;
+                case "0":        
+                case "1":
+                case "2":
+                case "3":
+                case "4":
+                case "5":
+                case "6":
+                case "7":
+                case "8":
+                case "9":
+                case "10":
+                    this.prepareInputElements(parseInt(buttonKeyBoard.key));
+                    break;
+                
+                case "c":
+                    if(buttonKeyBoard.ctrlKey)
+                        this.copyToClipboard();
+                    break;
+            }
+        });
+
     }
 
     displayExpression(buttonValue){
