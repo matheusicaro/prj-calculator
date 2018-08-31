@@ -6,6 +6,7 @@ class CalculatorController {
         this._lastOperatorSaved = "";
         this._lastNumberSaved = "";
         this._FirstNumberInsertedSaved = "";
+        this._displayCopy = "";
         this._DisplayResult = document.querySelector('#display');
         this._displayHour = document.querySelector('#hora');
         this._displayDate = document.querySelector('#data');
@@ -25,6 +26,8 @@ class CalculatorController {
             this.setDisplayDate = currentDate.toLocaleDateString(this._local);
             this.setDisplayHour = currentDate.toLocaleTimeString(this._local);
         }, time);
+
+        this.pasteFromClipboard();
   
     }
 
@@ -56,9 +59,7 @@ class CalculatorController {
     copyToClipboard(){
         
         let input = document.createElement('input');
-        input.value = this._DisplayResult;
-        //            this._DisplayResult = document.querySelector('#display');
-
+        input.value = this._displayCopy;
         document.body.appendChild(input);
         input.select();
 
@@ -67,17 +68,18 @@ class CalculatorController {
     }
 
     pasteFromClipboard(){
+
         document.addEventListener('paste', e =>{
 
             let text = e.clipboardData.getData('Text');
-            
+            console.log(text);
             this.setDisplayResult = parseFloat(text);
         })
     }
 
     initKeyBoardEvents(){
         document.addEventListener('keyup', buttonKeyBoard =>{
-            console.log(buttonKeyBoard.key);
+
             switch (buttonKeyBoard.key) {
                 case "Escape":
                     this.buttonAC();
@@ -453,6 +455,7 @@ class CalculatorController {
     }
 
     set setDisplayResult(value){
+        this._displayCopy = value;
         this._DisplayResult.innerHTML = value;
     }
 
