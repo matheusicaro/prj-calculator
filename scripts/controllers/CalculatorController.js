@@ -40,17 +40,17 @@ class CalculatorController {
   
     }
 
-    toggleAudio(){
-
-        this._audioOnOff = !this._audioOnOff;
-    }
-
+    // INSERTING AUDIO IN TAG, NECESSARY BECAUSE OF THE TEMPLATE IN SVG FORMAT
     playAudio(){
 
         if(this._audioOnOff){
             this._audio.currentTime = 0;
             this._audio.play();
         }
+    }
+
+    toggleAudio(){
+        this._audioOnOff = !this._audioOnOff;
     }
 
     // LISTEN AND TREAD MOUSE EVENTS (CLICK ON THE BUTTONS)
@@ -78,6 +78,7 @@ class CalculatorController {
         })
     }
 
+    // COPY VALUES ON THE DISPLAY
     copyToClipboard(){
         
         let input = document.createElement('input');
@@ -89,6 +90,7 @@ class CalculatorController {
         input.remove();
     }
 
+    // PASTE VALUES ON THE DISPLAY
     pasteFromClipboard(){
 
         document.addEventListener('paste', e =>{
@@ -97,7 +99,7 @@ class CalculatorController {
             this.setDisplayResult = parseFloat(text);
         })
     }
-
+    
     initKeyBoardEvents(){
         document.addEventListener('keyup', buttonKeyBoard =>{
 
