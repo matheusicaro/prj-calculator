@@ -10,7 +10,10 @@ class CalculatorController {
         this._DisplayResult = document.querySelector('#display');
         this._displayHour = document.querySelector('#hora');
         this._displayDate = document.querySelector('#data');
-        this._ElementsOperation = [];                            
+        this._ElementsOperation = [];  
+        
+        this._audioOnOff = false;
+        this._audio = new Audio('click.mp3');
         
         this._displayWasPrinted = false;
         this.initialize();
@@ -28,7 +31,26 @@ class CalculatorController {
         }, time);
 
         this.pasteFromClipboard();
+
+        document.querySelectorAll('.btn-ac').forEach(btn => {
+            btn.addEventListener('dblclick', e => {
+                this.toggleAudio();               
+            });
+        });
   
+    }
+
+    toggleAudio(){
+
+        this._audioOnOff = !this._audioOnOff;
+    }
+
+    playAudio(){
+
+        if(this._audioOnOff){
+            this._audio.currentTime = 0;
+            this._audio.play();
+        }
     }
 
     // LISTEN AND TREAD MOUSE EVENTS (CLICK ON THE BUTTONS)
@@ -72,13 +94,14 @@ class CalculatorController {
         document.addEventListener('paste', e =>{
 
             let text = e.clipboardData.getData('Text');
-            console.log(text);
             this.setDisplayResult = parseFloat(text);
         })
     }
 
     initKeyBoardEvents(){
         document.addEventListener('keyup', buttonKeyBoard =>{
+
+            this.playAudio();
 
             switch (buttonKeyBoard.key) {
                 case "Escape":
@@ -125,6 +148,8 @@ class CalculatorController {
     }
 
     displayExpression(buttonValue){
+
+        this.playAudio();
 
         switch (buttonValue) {
             case "ac":
@@ -456,7 +481,10 @@ class CalculatorController {
 
     set setDisplayResult(value){
         this._displayCopy = value;
-        this._DisplayResult.innerHTML = value;
+        if(value.toString().length > 10)
+            this._DisplayResult.innerHTML = value.toString().substring(0, 9);
+        else
+            this._DisplayResult.innerHTML = value;
     }
 
     set setDisplayHour(value){
