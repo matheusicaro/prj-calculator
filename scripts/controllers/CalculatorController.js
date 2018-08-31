@@ -398,8 +398,16 @@ class CalculatorController {
     }
 
     calculateFirstTermOfOperation(){
-        let resultFirstOperation = eval(this.getElementOperation.join(""));
-        return resultFirstOperation;
+
+        try{
+            let resultFirstOperation = eval(this.getElementOperation.join(""));
+            return resultFirstOperation;
+        }catch(e){
+            setTimeout(() => {
+                this.printDisplay("Error");
+            }, 1);
+        }
+
     }
 
     isEmptyElementsOperation(){
